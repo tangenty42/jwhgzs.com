@@ -46,7 +46,9 @@
                 name: '文件上传',
                 url: u('local://api/tmp/20230813'),
                 data: { fname: data.name },
-                file: data
+                file: data,
+                ossModule: 'tmp20230813',
+                ossParams: { fname: data.name }
             })
         })
     }

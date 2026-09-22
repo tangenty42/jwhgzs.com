@@ -10,6 +10,28 @@
         quill_dom = null,
         quill_id = ref('quill_' + random())
     
+    // 图片直传 OSS，编辑器内插入解析后的URL（提交时服务端归一为 static://）
+    const quillImageHandler = () => {
+        let input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/jpeg,image/png,image/gif,image/webp'
+        input.onchange = async () => {
+            let file = input.files[0]
+            if (! file) return
+            let lmsgID = loadingMsg('<strong>图片上传中...</strong>', 0)
+            try {
+                let r = await ossUpload(file, 'forum', {}, (pct) => editLoadingMsg_percent(lmsgID, pct))
+                let range = quill.getSelection(true)
+                quill.insertEmbed(range.index, 'image', r.url)
+                quill.setSelection(range.index + 1)
+            } catch (ex) {
+                errMsg('<strong>图片上传失败：</strong><br/><span>' + ex + '</span>')
+            }
+            closeLoadingMsg(lmsgID)
+        }
+        input.click()
+    }
+    
     onMounted(() => {
         /* quill配置参考：https://www.jianshu.com/p/b237372f15cc */
         quill = new Quill('#' + quill_id.value, {
@@ -28,7 +50,10 @@
                         ['link', 'image'],
                         
                         ['clean']
-                    ]
+                    ],
+                    handlers: {
+                        image: quillImageHandler
+                    }
                 }
             },
             theme: 'snow'

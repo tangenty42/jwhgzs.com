@@ -87,7 +87,7 @@
                                     <el-row>
                                         <el-col style="margin-right: 20px;">
                                             <div class="people_name" :class="{ people_name_gray: parseInt(v.disabled), people_boy: (v.sex == 1), people_girl: (v.sex == 2), people_teacher: (v.type == 1) }">{{ v.name }}</div>
-                                            <avatar :src="u('static://user/PA') + '/' + v.id + '/0.jpg?v=' + v.PA_photosVersion" :size="100" :lazy="true" style="margin: 10px 0;"></avatar>
+                                            <avatar :src="u('static://user/PA') + '/' + v.id + '/' + paAvatarFile(v.PA_photosName) + '?v=' + v.PA_photosVersion" :size="100" :lazy="true" style="margin: 10px 0;"></avatar>
                                         </el-col>
                                         <el-col>
                                             <el-tag effect="plain" v-if="v.type == 0" type="info" size="small" class="btns2">
@@ -158,7 +158,7 @@
     }
     function buildDefaultImgUrl(i) {
         return u('static://user/PA') + '/' + classChecked.value[0] + '_' + classChecked.value[1] + '/'
-            + i + '.jpg?v=' + classData.value.PA_photosVersion
+            + paPhotoFile(i) + '?v=' + classData.value.PA_photosVersion
     }
     function uploadPhotos() {
         selectFile(function (data) {
@@ -166,7 +166,9 @@
                 name: '上传照片',
                 url: u('local://api/xnzx/PA/photosUpload'),
                 data: { isClass: true, id: classChecked.value.join('_') },
-                file: data
+                file: data,
+                ossModule: 'PA',
+                ossParams: { isClass: true, id: classChecked.value.join('_'), mode: 0 }
             })
         })
     }

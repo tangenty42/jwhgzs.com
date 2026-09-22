@@ -209,6 +209,7 @@
                     url: u('local://api/user/avatarUpload'),
                     data: vaptchaData,
                     file: data,
+                    ossModule: 'avatar',
                     succText: $t('wait_for_1s_tip')
                 })
             })

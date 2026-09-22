@@ -338,6 +338,8 @@
                 url: u('local://api/xnzx/weekly/upload'),
                 data: data,
                 file: formData.value.attach,
+                ossModule: 'weekly',
+                ossParams: { id: formData.value.id, title: formData.value.title, type: type.value },
                 on_ok() {
                     _clear()
                     return '即将返回主页'

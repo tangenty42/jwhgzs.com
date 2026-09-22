@@ -114,6 +114,40 @@ export const j_hash = async () => {
         document.location.hash = route.hash
     }
 }
+export const ossUpload = (file, module, params = {}, onprogress = () => {}) => {
+    /* OSS 直传：先签名，再 PUT 到对象存储 */
+    return new Promise(async (resolve, reject) => {
+        let data = Object.assign({ module: module, size: file.size, mime: file.type }, params)
+        if (getCookie('userToken'))
+            data.userToken = getCookie('userToken')
+        let fdata = new FormData()
+        fdata.append('json', JSON.stringify(data))
+        let sign
+        try {
+            sign = await (await fetch(u('local://api/oss/sign'), { method: 'POST', body: fdata })).json()
+        } catch (ex) {
+            reject(ex)
+            return
+        }
+        if (! sign.status) {
+            reject(sign.msg)
+            return
+        }
+        let xhr = new XMLHttpRequest()
+        xhr.upload.onprogress = (evt) => evt.total && onprogress(Math.round(evt.loaded / evt.total * 100))
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300)
+                resolve(sign.data)
+            else
+                reject('OSS 直传失败：HTTP ' + xhr.status)
+        }
+        xhr.onerror = () => reject('OSS 直传网络错误')
+        xhr.open('PUT', sign.data.uploadUrl)
+        if (file.type)
+            xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+    })
+}
 export const p = (opts) => {
     const postErrLock = useState('postErrLock', () => false)
     
@@ -128,6 +162,7 @@ export const p = (opts) => {
         // - 'money' (alert when process and error. take the name because money is not always necessary !)
         let {
             url, name, data = {}, file = null, type = '',
+            ossModule = '', ossParams = {},
             on_ok = () => {}, on_err = () => {},
             jump = () => {}, jump_err = () => {}
         } = opts
@@ -188,6 +223,18 @@ export const p = (opts) => {
             closeLoadingMsg(lmsgID)
             
             resolve()
+        }
+        
+        if (file && ossModule) {
+            // 文件先直传 OSS，提交时只带 ossKey
+            try {
+                let r = await ossUpload(file, ossModule, ossParams, (pct) => client && lmsgID && editLoadingMsg_percent(lmsgID, pct))
+                data.ossKey = r.key
+                file = null
+            } catch (ex) {
+                err(ex)
+                return
+            }
         }
         
         let fdata = new FormData()
@@ -283,7 +330,17 @@ export const random = (a, b) => {
     } 
 }
 export const makeAvatarUrl = (udata) => {
-    return udata ? (u('static://user/avatar') + '/' + udata.id + '.jpg?v=' + udata.avatarVersion) : null
+    return udata ? (u('static://user/avatar') + '/' + udata.id + '.' + (udata.avatarExt || 'jpg') + '?v=' + udata.avatarVersion) : null
+}
+/* PA 照片名兼容：旧数据无扩展名，补 .jpg */
+export const paPhotoFile = (name) => (name && ('' + name).indexOf('.') < 0) ? name + '.jpg' : name
+export const paAvatarFile = (photosName) => {
+    let names = (typeof photosName == 'string' ? photosName.split(',') : (photosName || []))
+    for (let k in names) {
+        if (names[k] == '0' || ('' + names[k]).startsWith('0.'))
+            return paPhotoFile(names[k])
+    }
+    return '0.jpg'
 }
 export const getUrlParam = (name, _url) => {
     let url = _url || useRoute().fullPath || document.location.href

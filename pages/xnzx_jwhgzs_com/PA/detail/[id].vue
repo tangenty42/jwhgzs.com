@@ -56,7 +56,7 @@
         <el-divider></el-divider>
         <el-row>
             <el-col :span="-1">
-                <avatar :src="u('static://user/PA') + '/' + peopleDetail.id + '/0.jpg?v=' + peopleDetail.PA_photosVersion" :size="100"></avatar>
+                <avatar :src="u('static://user/PA') + '/' + peopleDetail.id + '/' + paAvatarFile(peopleDetail.PA_photosName) + '?v=' + peopleDetail.PA_photosVersion" :size="100"></avatar>
             </el-col>
             <el-col :span="-1" class="people_inf vcenter">
                 <span class="people_name" :class="{ people_name_gray: parseInt(peopleDetail.disabled), people_boy: (peopleDetail.sex == 1), people_girl: (peopleDetail.sex == 2), people_teacher: (peopleDetail.type == 1) }">{{ peopleDetail.name }}</span>
@@ -156,7 +156,7 @@
     
     // -- app
     function buildDefaultImgUrl(i) {
-        return u('static://user/PA') + '/' + peopleDetail.value.id + '/' + i + '.jpg?v=' + peopleDetail.value.PA_photosVersion
+        return u('static://user/PA') + '/' + peopleDetail.value.id + '/' + paPhotoFile(i) + '?v=' + peopleDetail.value.PA_photosVersion
     }
     function like(id) {
         p({
@@ -255,7 +255,9 @@
                         name: '上传照片',
                         url: u('local://api/xnzx/PA/photosUpload'),
                         data: { id: peopleDetail.value.id, mode: mode },
-                        file: data
+                        file: data,
+                        ossModule: 'PA',
+                        ossParams: { id: peopleDetail.value.id, mode: mode }
                     })
                 })
             },
